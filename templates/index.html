@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Remote PC Control</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background: #1a1a1a;
+            color: white;
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            overflow: hidden;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        #container {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-direction: column;
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+        }
+
+        #screen-container {
+            -webkit-flex: 1;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #000;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-align-items: center;
+            align-items: center;
+            -webkit-justify-content: center;
+            justify-content: center;
+        }
+
+        #screen {
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+        }
+
+        .status-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            -webkit-align-items: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        #status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #333;
+        }
+
+        .control-panel {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            display: -webkit-flex;
+            display: flex;
+            -webkit-justify-content: space-between;
+            justify-content: space-between;
+            -webkit-align-items: center;
+            align-items: center;
+            z-index: 1000;
+            -webkit-transform: translateY(100%);
+            transform: translateY(100%);
+            -webkit-transition: -webkit-transform 0.3s ease-out;
+            transition: transform 0.3s ease-out;
+        }
+
+        .control-panel.active {
+            -webkit-transform: translateY(0);
+            transform: translateY(0);
+        }
+
+        .control-buttons {
+            display: -webkit-flex;
+            display: flex;
+            gap: 10px;
+        }
+
+        .control-button {
+            padding: 10px 20px;
+            background: #444;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            font-size: 16px;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .control-button:active {
+            background: #555;
+        }
+
+        #keyboard-panel {
+            padding: 10px;
+            background: #333;
+        }
+
+        #keyboard-input {
+            width: 100%;
+            padding: 10px;
+            background: #444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 16px;
+            -webkit-appearance: none;
+        }
+
+        .special-keys {
+            display: -webkit-flex;
+            display: flex;
+            -webkit-flex-wrap: wrap;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .special-key {
+            -webkit-flex: 1;
+            flex: 1;
+            min-width: 60px;
+            padding: 10px;
+            background: #444;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .special-key:active {
+            background: #555;
+        }
+
+        @media (max-width: 768px) {
+            .control-button {
+                padding: 12px 20px;
+                font-size: 16px;
+            }
+
+            .special-key {
+                padding: 12px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div class="status-bar">
+            <div id="status">Connecting...</div>
+            <div class="control-buttons">
+                <button class="control-button" id="keyboard-btn">⌨️</button>
+                <button class="control-button" id="right-click">Right Click</button>
+            </div>
+        </div>
+
+        <div id="screen-container">
+            <img id="screen" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" alt="Screen">
+        </div>
+
+        <div class="control-panel" id="control-panel">
+            <div id="keyboard-panel">
+                <input type="text" id="keyboard-input" placeholder="Type here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                <div class="special-keys">
+                    <button class="special-key" data-key="tab">Tab</button>
+                    <button class="special-key" data-key="enter">Enter</button>
+                    <button class="special-key" data-key="backspace">⌫</button>
+                    <button class="special-key" data-key="space">Space</button>
+                    <button class="special-key" data-key="up">↑</button>
+                    <button class="special-key" data-key="down">↓</button>
+                    <button class="special-key" data-key="left">←</button>
+                    <button class="special-key" data-key="right">→</button>
+                    <button class="special-key" data-key="escape">Esc</button>
+                    <button class="special-key" data-key="delete">Del</button>
+                    <button class="special-key" data-key="ctrl">Ctrl</button>
+                    <button class="special-key" data-key="alt">Alt</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+    <script>
+        // Older iOS compatibility
+        document.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        const socket = io();
+        const screen = document.getElementById('screen');
+        const status = document.getElementById('status');
+        const keyboardBtn = document.getElementById('keyboard-btn');
+        const controlPanel = document.getElementById('control-panel');
+        const keyboardInput = document.getElementById('keyboard-input');
+        const rightClickBtn = document.getElementById('right-click');
+        const screenContainer = document.getElementById('screen-container');
+        
+        let isConnected = false;
+        let lastTouchX = 0;
+        let lastTouchY = 0;
+        let isTouching = false;
+        let screenWidth = 0;
+        let screenHeight = 0;
+
+        socket.on('connect', () => {
+            isConnected = true;
+            status.textContent = 'Connected';
+            status.style.background = '#4CAF50';
+        });
+
+        socket.on('disconnect', () => {
+            isConnected = false;
+            status.textContent = 'Disconnected';
+            status.style.background = '#f44336';
+        });
+
+        socket.on('screen_update', (data) => {
+            screen.src = 'data:image/jpeg;base64,' + data.image;
+        });
+
+        socket.on('screen_size', (data) => {
+            screenWidth = data.width;
+            screenHeight = data.height;
+        });
+
+        // Touch handling with iOS compatibility
+        screenContainer.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!isConnected) return;
+            
+            isTouching = true;
+            const touch = e.touches[0];
+            const rect = screen.getBoundingClientRect();
+            lastTouchX = touch.clientX - rect.left;
+            lastTouchY = touch.clientY - rect.top;
+
+            socket.emit('mouse_down', { button: 'left' });
+        }, false);
+
+        screenContainer.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            if (!isConnected || !isTouching) return;
+
+            const touch = e.touches[0];
+            const rect = screen.getBoundingClientRect();
+            const x = touch.clientX - rect.left;
+            const y = touch.clientY - rect.top;
+
+            if (Math.abs(x - lastTouchX) > 1 || Math.abs(y - lastTouchY) > 1) {
+                socket.emit('mouse_move', {
+                    x: x,
+                    y: y,
+                    screenWidth: screen.width || rect.width,
+                    screenHeight: screen.height || rect.height
+                });
+                lastTouchX = x;
+                lastTouchY = y;
+            }
+        }, false);
+
+        screenContainer.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            if (!isConnected) return;
+            
+            isTouching = false;
+            socket.emit('mouse_up', { button: 'left' });
+            socket.emit('mouse_click', { button: 'left', clicks: 1 });
+        }, false);
+
+        // Button controls
+        rightClickBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            if (!isConnected) return;
+            socket.emit('mouse_click', { button: 'right', clicks: 1 });
+        }, false);
+
+        keyboardBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            controlPanel.classList.toggle('active');
+            if (controlPanel.classList.contains('active')) {
+                keyboardInput.focus();
+            }
+        }, false);
+
+        // Keyboard handling
+        keyboardInput.addEventListener('input', function(e) {
+            const key = e.data;
+            if (key && isConnected) {
+                socket.emit('key_press', { key: key });
+            }
+        }, false);
+
+        keyboardInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                socket.emit('key_press', { key: 'enter' });
+                keyboardInput.value = '';
+            } else if (e.key === 'Backspace') {
+                socket.emit('key_press', { key: 'backspace' });
+            }
+        }, false);
+
+        // Special keys with iOS compatibility
+        document.querySelectorAll('.special-key').forEach(button => {
+            button.addEventListener('touchstart', function(e) {
+                e.preventDefault();
+                const key = this.dataset.key;
+                if (key && isConnected) {
+                    socket.emit('special_key', { key: key });
+                    this.style.background = '#555';
+                }
+            }, false);
+
+            button.addEventListener('touchend', function(e) {
+                e.preventDefault();
+                this.style.background = '';
+            }, false);
+        });
+
+        // Prevent default behaviors
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+        }, false);
+    </script>
+</body>
+</html>
